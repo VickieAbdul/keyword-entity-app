@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keyword and Entity Detection App</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .container { max-width: 1200px; margin-top: 30px; }
+        .entity-type { padding: 2px 8px; margin-right: 5px; border-radius: 3px; display: inline-block; }
+        .sidebar { background-color: #f8f9fa; padding: 20px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Keyword and Entity Detection App</h1>
+        <p class="lead">
+            Paste your text, highlight specific words of your choice, and extract named entities.
+            Identify people, organizations, locations, technologies, and much more with enhanced accuracy—all in one tool.
+        </p>
+
+        <div class="row">
+            <div class="col-md-9">
+                <form action="/process" method="post">
+                    <div class="mb-3">
+                        <label for="text" class="form-label">Enter your text:</label>
+                        <textarea class="form-control" id="text" name="text" rows="8" required></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary mb-3">Process Text</button>
+                    
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-outline-secondary" id="useExample">Use Example Text</button>
+                    </div>
+                    
+                    <div class="mb-3 collapse" id="exampleTextSection">
+                        <div class="card card-body">
+                            <pre>{{ example_text }}</pre>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="col-md-3 sidebar">
+                <h4>Settings</h4>
+                <div class="mb-3">
+                    <label for="highlight_word" class="form-label">Input a keyword to highlight (optional):</label>
+                    <input type="text" class="form-control" id="highlight_word" name="highlight_word" form="settingsForm">
+                </div>
+                
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="highlight_entities" name="highlight_entities" checked form="settingsForm">
+                    <label class="form-check-label" for="highlight_entities">Highlight named entities</label>
+                </div>
+                
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="show_entity_count" name="show_entity_count" checked form="settingsForm">
+                    <label class="form-check-label" for="show_entity_count">Show entity count statistics</label>
+                </div>
+                
+                <form id="settingsForm"></form>
+                
+                <div class="mb-3 mt-4">
+                    <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#aboutCustomRules">
+                        About custom entity rules
+                    </button>
+                    <div class="collapse mt-2" id="aboutCustomRules">
+                        <div class="card card-body">
+                            <h5>Custom Entity Recognition Rules</h5>
+                            <p>
+                                This application includes custom rules to improve the recognition of technology-related entities:
+                            </p>
+                            <ol>
+                                <li><strong>AI Companies</strong>: Custom patterns ensure companies like OpenAI, DeepMind, and Anthropic are correctly labeled as Organizations (ORG).</li>
+                                <li><strong>AI Products</strong>: Products like ChatGPT, GPT-4, and Claude are properly categorized as Products.</li>
+                                <li><strong>Tech Concepts</strong>: Terms like "AI" and "Machine Learning" are properly categorized instead of being mistaken for locations.</li>
+                            </ol>
+                            <p>
+                                These rules help overcome limitations in the base spaCy model when dealing with newer technology organizations and concepts.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('useExample').addEventListener('click', function() {
+            const exampleText = document.querySelector('#exampleTextSection pre').textContent;
+            document.getElementById('text').value = exampleText;
+            
+            // Toggle example section
+            const exampleSection = document.getElementById('exampleTextSection');
+            bootstrap.Collapse.getOrCreateInstance(exampleSection).toggle();
+        });
+        
+        // Move settings inputs to main form on submit
+        document.querySelector('form[action="/process"]').addEventListener('submit', function() {
+            const highlightWord = document.getElementById('highlight_word');
+            const highlightEntities = document.getElementById('highlight_entities');
+            const showEntityCount = document.getElementById('show_entity_count');
+            
+            if (highlightWord.value) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'highlight_word';
+                input.value = highlightWord.value;
+                this.appendChild(input);
+            }
+            
+            if (highlightEntities.checked) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'highlight_entities';
+                input.value = 'on';
+                this.appendChild(input);
+            }
+            
+            if (showEntityCount.checked) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'show_entity_count';
+                input.value = 'on';
+                this.appendChild(input);
+            }
+        });
+    </script>
+</body>
+</html>

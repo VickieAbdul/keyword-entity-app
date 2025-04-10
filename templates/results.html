@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keyword and Entity Detection Results</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .container { max-width: 1200px; margin-top: 30px; }
+        .entity-type { padding: 2px 8px; margin-right: 5px; border-radius: 3px; display: inline-block; }
+        .highlighted-text { 
+            background-color: #f8f9fa; 
+            padding: 15px; 
+            border-radius: 5px; 
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        table { width: 100%; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Entity Detection Results</h1>
+        
+        <div class="row mb-4">
+            <div class="col-12">
+                <a href="/" class="btn btn-outline-secondary">⬅ Back to Input</a>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-8">
+                <h3>Highlighted Text</h3>
+                <div class="highlighted-text">
+                    {{ highlighted_text|safe }}
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <h3>Entity Types</h3>
+                <div class="list-group">
+                    {% for label, count in entity_counts %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="entity-type" style="background-color: {{ entity_colors.get(label, '#e0e0e0') }};">{{ label }}</span>
+                            {{ entity_descriptions.get(label, "") }}
+                        </div>
+                        <span class="badge bg-primary rounded-pill">{{ count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        {% if entities %}
+        <div class="row mt-4">
+            <div class="col-12">
+                <h3>Extracted Entities</h3>
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Entity</th>
+                                <th>Label</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for entity in entities %}
+                            <tr>
+                                <td>{{ entity.text }}</td>
+                                <td>
+                                    <span class="entity-type" style="background-color: {{ entity_colors.get(entity.label, '#e0e0e0') }};">
+                                        {{ entity.label }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <button onclick="downloadEntities()" class="btn btn-primary mt-2">Download as CSV</button>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if show_entity_count and entity_counts %}
+        <div class="row mt-4">
+            <div class="col-12">
+                <h3>Entity Distribution</h3>
+                <canvas id="entityChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <script>
+        // For entity chart
+        {% if show_entity_count and entity_counts %}
+        document.addEventListener('DOMContentLoaded', function() {
+            const ctx = document.getElementById('entityChart').getContext('2d');
+            const chartData = {{ chart_data|safe }};
+            
+            const labels = chartData.map(item => item.label);
+            const data = chartData.map(item => item.count);
+            const backgroundColors = chartData.map(item => {
+                const colors = {{ entity_colors|tojson }};
+                return colors[item.label] || '#e0e0e0';
+            });
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Entity Count',
+                        data: data,
+                        backgroundColor: backgroundColors
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    }
+                }
+            });
+        });
+        {% endif %}
+        
+        // For downloading entities as CSV
+        function downloadEntities() {
+            const entities = {{ entities|tojson }};
+            window.location.href = `/download-csv?entities=${encodeURIComponent(JSON.stringify(entities))}`;
+        }
+    </script>
+</body>
+</html>
